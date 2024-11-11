@@ -5,13 +5,14 @@ using System.Threading;
 #if FANTASY_NET
 using Fantasy.Platform.Net;
 #endif
+
 namespace Fantasy
 {
     internal sealed class MainScheduler : ISceneScheduler
     {
         private readonly Queue<Scene> _queue = new Queue<Scene>();
         public readonly ThreadSynchronizationContext ThreadSynchronizationContext;
-        
+
         public MainScheduler()
         {
             ThreadSynchronizationContext = new ThreadSynchronizationContext();
@@ -19,6 +20,7 @@ namespace Fantasy
             SynchronizationContext.SetSynchronizationContext(ThreadSynchronizationContext);
 #endif
         }
+
         public void Dispose()
         {
             _queue.Clear();
@@ -32,7 +34,7 @@ namespace Fantasy
                 {
                     return;
                 }
-                
+
                 _queue.Enqueue(scene);
             });
         }
@@ -45,7 +47,7 @@ namespace Fantasy
                 {
                     return;
                 }
-                
+
                 var initialCount = _queue.Count;
                 for (var i = 0; i < initialCount; i++)
                 {
@@ -62,20 +64,22 @@ namespace Fantasy
         {
             ThreadSynchronizationContext.Update();
             var initialCount = _queue.Count;
-            
+
             while (initialCount-- > 0)
             {
-                if(!_queue.TryDequeue(out var scene))
+                if (!_queue.TryDequeue(out var scene))
                 {
                     continue;
                 }
-            
+
                 if (scene.IsDisposed)
                 {
                     continue;
                 }
-                
+
                 scene.Update();
+
+                // 入队
                 _queue.Enqueue(scene);
             }
         }

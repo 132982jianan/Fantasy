@@ -32,6 +32,7 @@ namespace Fantasy.Assembly
         public static void Initialize(params System.Reflection.Assembly[] assemblies)
         {
             LoadAssembly(typeof(AssemblySystem).Assembly);
+
             foreach (var assembly in assemblies)
             {
                 LoadAssembly(assembly);
@@ -44,11 +45,14 @@ namespace Fantasy.Assembly
         /// <param name="assembly">要加载的程序集。</param>
         public static void LoadAssembly(System.Reflection.Assembly assembly)
         {
+            // 通过hash取得唯一id
             var assemblyIdentity = AssemblyIdentity(assembly);
-                
+
             if (AssemblyList.TryGetValue(assemblyIdentity, out var assemblyInfo))
             {
+                // 如果之前已经有这个程序集了，那么就会先卸载掉
                 assemblyInfo.Unload();
+
                 foreach (var assemblySystem in AssemblySystems)
                 {
                     assemblySystem.ReLoad(assemblyIdentity);
@@ -63,7 +67,7 @@ namespace Fantasy.Assembly
                     assemblySystem.Load(assemblyIdentity);
                 }
             }
-            
+
             assemblyInfo.Load(assembly);
         }
 
@@ -74,19 +78,19 @@ namespace Fantasy.Assembly
         public static void UnLoadAssembly(System.Reflection.Assembly assembly)
         {
             var assemblyIdentity = AssemblyIdentity(assembly);
-            
+
             if (!AssemblyList.Remove(assemblyIdentity, out var assemblyInfo))
             {
                 return;
             }
-            
+
             assemblyInfo.Unload();
             foreach (var assemblySystem in AssemblySystems)
             {
                 assemblySystem.OnUnLoad(assemblyIdentity);
             }
         }
-        
+
         /// <summary>
         /// 将AssemblySystem接口的object注册到程序集管理中心
         /// </summary>
@@ -97,9 +101,9 @@ namespace Fantasy.Assembly
             {
                 return;
             }
-            
+
             AssemblySystems.Add(assemblySystem);
-            
+
             foreach (var (assemblyIdentity, _) in AssemblyList)
             {
                 await assemblySystem.Load(assemblyIdentity);
@@ -177,7 +181,7 @@ namespace Fantasy.Assembly
                 {
                     continue;
                 }
-                
+
                 foreach (var type in assemblyLoad)
                 {
                     yield return type;
@@ -202,7 +206,7 @@ namespace Fantasy.Assembly
             {
                 yield break;
             }
-            
+
             foreach (var type in assemblyLoad)
             {
                 yield return type;
@@ -233,7 +237,7 @@ namespace Fantasy.Assembly
                 }
             }
         }
-        
+
         /// <summary>
         /// 根据Assembly的强命名计算唯一标识。
         /// </summary>
@@ -253,7 +257,7 @@ namespace Fantasy.Assembly
             {
                 UnLoadAssembly(assemblyInfo.Assembly);
             }
-            
+
             AssemblyList.Clear();
             AssemblySystems.Clear();
         }

@@ -16,6 +16,7 @@ using Fantasy.SingleCollection;
 using System.Runtime.CompilerServices;
 using Fantasy.Network.Route;
 #endif
+
 #pragma warning disable CS8601 // Possible null reference assignment.
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
 #pragma warning disable CS8603 // Possible null reference return.
@@ -33,38 +34,46 @@ namespace Fantasy
         /// Scene在主线程中运行.
         /// </summary>
         public const string MainThread = "MainThread";
+
         /// <summary>
         /// Scene在一个独立的线程中运行.
         /// </summary>
         public const string MultiThread = "MultiThread";
+
         /// <summary>
         /// Scene在一个根据当前CPU核心数创建的线程池中运行.
         /// </summary>
         public const string ThreadPool = "ThreadPool";
     }
+
     /// <summary>
     /// 表示一个场景实体，用于创建与管理特定的游戏场景信息。
     /// </summary>
     public class Scene : Entity
     {
         #region Members
+
 #if FANTASY_NET
         /// <summary>
         /// Scene类型，对应SceneConfig的SceneType
         /// </summary>
         public int SceneType { get; private set; }
+
         /// <summary>
         /// 所属的世界
         /// </summary>
         public World World { get; private set; }
+
         /// <summary>
         /// 所在的Process
         /// </summary>
         public Process Process { get; private set; }
+
         /// <summary>
         /// SceneConfig的Id
         /// </summary>
         public uint SceneConfigId { get; private set; }
+
         internal ANetwork InnerNetwork { get; private set; }
         internal ANetwork OuterNetwork { get; private set; }
         internal SceneConfig SceneConfig => SceneConfigData.Instance.Get(SceneConfigId);
@@ -74,8 +83,10 @@ namespace Fantasy
         /// 当前Scene的上下文
         /// </summary>
         public ThreadSynchronizationContext ThreadSynchronizationContext { get; private set; }
+
         private readonly Dictionary<long, Entity> _entities = new Dictionary<long, Entity>();
         internal readonly Dictionary<Type, Func<IPool>> TypeInstance = new Dictionary<Type, Func<IPool>>();
+
         #endregion
 
         #region IdFactory
@@ -84,13 +95,14 @@ namespace Fantasy
         /// Entity实体Id的生成器
         /// </summary>
         public EntityIdFactory EntityIdFactory { get; private set; }
+
         /// <summary>
         /// Entity实体RuntimeId的生成器
         /// </summary>
         public RuntimeIdFactory RuntimeIdFactory { get; private set; }
 
         #endregion
-        
+
         #region Pool
 
         internal EntityPool EntityPool { get; private set; }
@@ -98,29 +110,34 @@ namespace Fantasy
         internal EntitySortedDictionaryPool<long, Entity> EntitySortedDictionaryPool { get; private set; }
 
         #endregion
-        
+
         #region Component
 
         /// <summary>
         /// Scene下的任务调度器系统组件
         /// </summary>
         public TimerComponent TimerComponent { get; private set; }
+
         /// <summary>
         /// Scene下的事件系统组件
         /// </summary>
         public EventComponent EventComponent { get; private set; }
+
         /// <summary>
         /// Scene下的ESC系统组件
         /// </summary>
         public EntityComponent EntityComponent { get; private set; }
+
         /// <summary>
         /// Scene下的网络消息对象池组件
         /// </summary>
         public MessagePoolComponent MessagePoolComponent { get; private set; }
+
         /// <summary>
         /// Scene下的协程锁组件
         /// </summary>
         public CoroutineLockComponent CoroutineLockComponent { get; private set; }
+
         // /// <summary>
         // /// Scene下的网络线程组件
         // /// </summary>
@@ -129,6 +146,7 @@ namespace Fantasy
         /// Scene下的网络消息派发组件
         /// </summary>
         internal MessageDispatcherComponent MessageDispatcherComponent { get; private set; }
+
         /// <summary>
         /// Scene下的内网消息发送组件
         /// </summary>
@@ -139,6 +157,7 @@ namespace Fantasy
         /// </summary>
         public SingleCollectionComponent SingleCollectionComponent { get; private set; }
 #endif
+
         #endregion
 
         #region Initialize
@@ -161,7 +180,7 @@ namespace Fantasy
 #endif
         }
 
-        private void Initialize(Scene scene) 
+        private void Initialize(Scene scene)
         {
             scene.EntityPool = scene.EntityPool;
             scene.EntityListPool = scene.EntityListPool;
@@ -179,6 +198,7 @@ namespace Fantasy
             SingleCollectionComponent = scene.SingleCollectionComponent;
 #endif
         }
+
         /// <summary>
         /// Scene销毁方法，执行了该方法会把当前Scene下的所有实体都销毁掉。
         /// </summary>
@@ -193,6 +213,7 @@ namespace Fantasy
             {
                 innerSession.Dispose();
             }
+
             _processSessionInfos.Clear();
 #endif
 #if FANTASY_UNITY
@@ -270,7 +291,8 @@ namespace Fantasy
             });
             return scene;
         }
-        public Session Connect(string remoteAddress, NetworkProtocolType networkProtocolType, Action onConnectComplete, Action onConnectFail, Action onConnectDisconnect, bool isHttps, int connectTimeout = 5000)
+        public Session Connect(string remoteAddress, NetworkProtocolType networkProtocolType, Action onConnectComplete, Action onConnectFail, Action onConnectDisconnect, bool isHttps, int connectTimeout
+ = 5000)
         {
             UnityNetwork?.Dispose();
             UnityNetwork = NetworkProtocolFactory.CreateClient(this, networkProtocolType, NetworkTarget.Outer);
@@ -294,6 +316,7 @@ namespace Fantasy
             scene.AddEntity(scene);
             return scene;
         }
+
         /// <summary>
         /// 创建一个新的Scene
         /// </summary>
@@ -303,11 +326,13 @@ namespace Fantasy
         /// <returns>创建成功后会返回创建的Scene的实例</returns>
         public static async FTask<Scene> Create(Process process, MachineConfig machineConfig, SceneConfig sceneConfig)
         {
+            // 理解：进程id+MachineId确定一个进程。 然后这个进程管理了所有的Scene
             var scene = Create(process, (byte)sceneConfig.WorldConfigId, sceneConfig.Id);
+
             scene.SceneType = sceneConfig.SceneType;
             scene.SceneConfigId = sceneConfig.Id;
             await SetScheduler(scene, null, sceneConfig.SceneRuntimeType);
-            
+
             if (sceneConfig.WorldConfigId != 0)
             {
                 scene.World = World.Create(scene, (byte)sceneConfig.WorldConfigId);
@@ -316,15 +341,18 @@ namespace Fantasy
             if (sceneConfig.InnerPort != 0)
             {
                 // 创建内网网络服务器
-                scene.InnerNetwork = NetworkProtocolFactory.CreateServer(scene, ProcessDefine.InnerNetwork, NetworkTarget.Inner, machineConfig.InnerBindIP, sceneConfig.InnerPort);
+                scene.InnerNetwork = NetworkProtocolFactory.CreateServer(scene, ProcessDefine.InnerNetwork, NetworkTarget.Inner,
+                    machineConfig.InnerBindIP, sceneConfig.InnerPort);
             }
 
             if (sceneConfig.OuterPort != 0)
             {
                 // 创建外网网络服务
                 var networkProtocolType = Enum.Parse<NetworkProtocolType>(sceneConfig.NetworkProtocol);
-                scene.OuterNetwork = NetworkProtocolFactory.CreateServer(scene, networkProtocolType, NetworkTarget.Outer, machineConfig.OuterBindIP, sceneConfig.OuterPort);
+                scene.OuterNetwork = NetworkProtocolFactory.CreateServer(scene, networkProtocolType, NetworkTarget.Outer, machineConfig.OuterBindIP,
+                    sceneConfig.OuterPort);
             }
+
             Process.AddScene(scene);
             process.AddSceneToProcess(scene);
             scene.ThreadSynchronizationContext.Post(() =>
@@ -332,13 +360,14 @@ namespace Fantasy
                 if (sceneConfig.SceneTypeString == "Addressable")
                 {
                     // 如果是AddressableScene,自动添加上AddressableManageComponent。
-                    scene.AddComponent<AddressableManageComponent>(); 
+                    scene.AddComponent<AddressableManageComponent>();
                 }
-                
+
                 scene.EventComponent.PublishAsync(new OnCreateScene(scene)).Coroutine();
             });
             return scene;
         }
+
         /// <summary>
         /// 在Scene下面创建一个子Scene，一般用于副本，或者一些特殊的场景。
         /// </summary>
@@ -361,12 +390,13 @@ namespace Fantasy
             scene.RunTimeId = scene.RuntimeIdFactory.Create;
             scene.AddEntity(scene);
             await SetScheduler(scene, parentScene, SceneRuntimeType.ThreadPool);
-            
+
             Process.AddScene(scene);
             parentScene.Process.AddSceneToProcess(scene);
-            
+
             scene.ThreadSynchronizationContext.Post(() => OnEvent().Coroutine());
             return scene;
+
             async FTask OnEvent()
             {
                 await scene.EventComponent.PublishAsync(new OnCreateScene(scene));
@@ -399,7 +429,7 @@ namespace Fantasy
                 case "ThreadPool":
                 {
 #if !FANTASY_WEBGL
-                    scene.ThreadSynchronizationContext = new ThreadSynchronizationContext();   
+                    scene.ThreadSynchronizationContext = new ThreadSynchronizationContext();
 #endif
                     scene.SceneUpdate = new EmptySceneUpdate();
                     ThreadScheduler.AddToThreadPoolScheduler(scene);
@@ -414,6 +444,7 @@ namespace Fantasy
                 }
             }
         }
+
         #endregion
 
         #region Entities
@@ -545,17 +576,20 @@ namespace Fantasy
             {
                 throw new Exception($"The machine with machineId {processConfig.MachineId} was not found in the configuration file");
             }
-            
+
             var remoteAddress = $"{machineConfig.InnerBindIP}:{sceneConfig.InnerPort}";
             var client = NetworkProtocolFactory.CreateClient(Scene, ProcessDefine.InnerNetwork, NetworkTarget.Inner);
-            var session = client.Connect(remoteAddress, null, () =>
-            {
-                Log.Error($"Unable to connect to the target server sourceServerId:{Scene.Process.Id} targetServerId:{sceneConfig.ProcessConfigId}");
-            }, null, false);
+            var session = client.Connect(remoteAddress, null,
+                () =>
+                {
+                    Log.Error(
+                        $"Unable to connect to the target server sourceServerId:{Scene.Process.Id} targetServerId:{sceneConfig.ProcessConfigId}");
+                }, null, false);
             _processSessionInfos.Add(sceneId, new ProcessSessionInfo(session, client));
             return session;
         }
 #endif
+
         #endregion
     }
 }

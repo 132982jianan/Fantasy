@@ -16,30 +16,36 @@ public sealed class Process : IDisposable
     /// 当前进程的Id
     /// </summary>
     public readonly uint Id;
+
     /// <summary>
     /// 进程关联的MachineId
     /// </summary>
     public readonly uint MachineId;
+
     private readonly ConcurrentDictionary<uint, Scene> _processScenes = new ConcurrentDictionary<uint, Scene>();
     private static readonly ConcurrentDictionary<uint, Scene> Scenes = new ConcurrentDictionary<uint, Scene>();
-    private Process() {}
+
+    private Process()
+    {
+    }
+
     private Process(uint id, uint machineId)
     {
         Id = id;
         MachineId = machineId;
     }
-    
+
     internal bool IsProcess(ref long routeId)
     {
         var sceneId = RuntimeIdFactory.GetSceneId(ref routeId);
         return _processScenes.ContainsKey(sceneId);
     }
-    
+
     internal bool IsProcess(ref uint sceneId)
     {
         return _processScenes.ContainsKey(sceneId);
     }
-    
+
     internal void AddSceneToProcess(Scene scene)
     {
         _processScenes.TryAdd(scene.SceneConfigId, scene);
@@ -54,7 +60,7 @@ public sealed class Process : IDisposable
             scene.Dispose();
         }
     }
-    
+
     internal bool TryGetSceneToProcess(long routeId, out Scene scene)
     {
         var sceneId = RuntimeIdFactory.GetSceneId(ref routeId);
@@ -65,6 +71,7 @@ public sealed class Process : IDisposable
     {
         return _processScenes.TryGetValue(sceneId, out scene);
     }
+
     /// <summary>
     /// 销毁方法
     /// </summary>
@@ -74,9 +81,9 @@ public sealed class Process : IDisposable
         {
             return;
         }
-        
+
         var sceneQueue = new Queue<Scene>();
-            
+
         foreach (var (_, scene) in _processScenes)
         {
             sceneQueue.Enqueue(scene);
@@ -90,6 +97,11 @@ public sealed class Process : IDisposable
         _processScenes.Clear();
     }
 
+    /// <summary>
+    /// 理解：创建出一个进程(其实就是创建下面的所有Scene)
+    /// </summary>
+    /// <param name="processConfigId"></param>
+    /// <returns></returns>
     internal static async FTask<Process?> Create(uint processConfigId)
     {
         if (!ProcessConfigData.Instance.TryGet(processConfigId, out var processConfig))
@@ -107,6 +119,7 @@ public sealed class Process : IDisposable
         var process = new Process(processConfigId, processConfig.MachineId);
         var sceneConfigs = SceneConfigData.Instance.GetByProcess(processConfigId);
 
+        // 理解:创建出这个进程下管理的所有Scene
         foreach (var sceneConfig in sceneConfigs)
         {
             await Scene.Create(process, machineConfig, sceneConfig);
@@ -115,7 +128,7 @@ public sealed class Process : IDisposable
         Log.Info($"Process:{processConfigId} Startup Complete SceneCount:{sceneConfigs.Count}");
         return process;
     }
-    
+
     internal bool IsInAppliaction(ref uint sceneId)
     {
         return _processScenes.ContainsKey(sceneId);
@@ -135,7 +148,7 @@ public sealed class Process : IDisposable
             scene.Dispose();
         }
     }
-    
+
     internal static bool TryGetScene(long routeId, out Scene scene)
     {
         var sceneId = RuntimeIdFactory.GetSceneId(ref routeId);

@@ -26,9 +26,10 @@ namespace Fantasy
                 Register(new ConsoleLog());
                 return;
             }
-            
+
             var processMode = ProcessMode.None;
 
+            //笔记:由于前面已经获取了类型
             switch (ProcessDefine.Options.Mode)
             {
                 case "Develop":
@@ -42,7 +43,7 @@ namespace Fantasy
                     break;
                 }
             }
-            
+
             _logCore.Initialize(processMode);
         }
 #endif
@@ -56,7 +57,7 @@ namespace Fantasy
             {
                 return;
             }
-            
+
             _logCore = log;
             _isRegister = true;
         }
@@ -129,6 +130,7 @@ namespace Fantasy
                 _logCore.Error($"{e.Data["StackTrace"]}\n{e}");
                 return;
             }
+
             var str = e.ToString();
             _logCore.Error(str);
         }

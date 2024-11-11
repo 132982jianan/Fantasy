@@ -6,6 +6,7 @@ using Fantasy.Helper;
 using Fantasy.Network;
 #endif
 using ProtoBuf;
+
 #pragma warning disable CS8604 // Possible null reference argument.
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
@@ -23,12 +24,13 @@ namespace Fantasy.Serialize
         /// ProtoBuf在SerializerManager的数组下标
         /// </summary>
         public const int ProtoBuf = 0;
+
         /// <summary>
         /// Bson在SerializerManager的数组下标
         /// </summary>
         public const int Bson = 1;
     }
-    
+
     /// <summary>
     /// 管理序列化静态方法，主要是优化网络协议时使用。
     /// </summary>
@@ -43,6 +45,7 @@ namespace Fantasy.Serialize
         /// </summary>
         public static void Initialize()
         {
+            // 确保只初始化1次
             if (_isInitialized)
             {
                 return;
@@ -51,7 +54,7 @@ namespace Fantasy.Serialize
             try
             {
                 var sort = new SortedList<long, ISerialize>();
-            
+
                 foreach (var serializerType in AssemblySystem.ForEach(typeof(ISerialize)))
                 {
                     var serializer = (ISerialize)Activator.CreateInstance(serializerType);
@@ -61,11 +64,11 @@ namespace Fantasy.Serialize
 
                 var index = 1;
                 _serializers = new ISerialize[sort.Count];
-            
+
                 foreach (var (_, serialize) in sort)
                 {
                     var serializerIndex = 0;
-                    
+
                     switch (serialize)
                     {
                         case ProtoBufPackHelper:
@@ -77,17 +80,17 @@ namespace Fantasy.Serialize
                         {
                             serializerIndex = FantasySerializerType.Bson;
                             break;
-                        }    
+                        }
                         default:
                         {
                             serializerIndex = ++index;
                             break;
                         }
                     }
-                
+
                     _serializers[serializerIndex] = serialize;
                 }
-            
+
                 _isInitialized = true;
             }
             catch
@@ -130,7 +133,7 @@ namespace Fantasy.Serialize
         {
             return _serializers[opCodeProtocolType];
         }
-        
+
         /// <summary>
         /// 获得一个序列化器
         /// </summary>
